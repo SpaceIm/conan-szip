@@ -46,6 +46,11 @@ class SzipConan(ConanFile):
         os.rename(self.name + "-" + self.version, self._source_subfolder)
 
     def build(self):
+        self._patch_sources()
+        cmake = self._configure_cmake()
+        cmake.build()
+
+    def _patch_sources(self):
         tools.replace_in_file(os.path.join(self._source_subfolder, "CMakeLists.txt"),
                               "set (CMAKE_POSITION_INDEPENDENT_CODE ON)", "")
         tools.replace_in_file(os.path.join(self._source_subfolder, "src", "CMakeLists.txt"),
@@ -62,8 +67,10 @@ class SzipConan(ConanFile):
                               "if (NOT BUILD_SHARED_LIBS)\n" \
                               "  INSTALL_TARGET_PDB (${SZIP_LIB_TARGET} ${SZIP_INSTALL_BIN_DIR} libraries)\n" \
                               "endif()")
-        cmake = self._configure_cmake()
-        cmake.build()
+        tools.replace_in_file(os.path.join(self._source_subfolder, "src", "szlib.h"),
+                              "#define SZLIB_VERSION \"2.1.1\"",
+                              "#include <stddef.h>\n" \
+                              "#define SZLIB_VERSION \"2.1.1\"")
 
     def _configure_cmake(self):
         if self._cmake:
